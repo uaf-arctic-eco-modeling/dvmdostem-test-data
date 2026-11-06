@@ -37,15 +37,28 @@ Before publishing, the release pull request must provide:
 
 1. A bundle archive and its metadata document, validated against
    `schemas/bundle-metadata.schema.json`.
-2. The release version, SHA-256 digest, byte size, archive format, and schema
+2. A named data maintainer responsible for the bundle.
+3. The release version, SHA-256 digest, byte size, archive format, and schema
    version for every bundle.
-3. Data provenance, generation procedure, source revision or source-data
+4. Data provenance, generation procedure, source revision or source-data
    identifiers, and the intended dvm-dos-tem scenarios.
-4. An explicit license identifier or redistribution status. Restricted,
+5. An explicit license identifier or redistribution status. Restricted,
    unclear, or absent redistribution permission blocks publication.
-5. Evidence that the archive extracts successfully and that its listed files
+6. Evidence that the archive extracts successfully and that its listed files
    match the metadata.
-6. A maintainer approval documenting the data/provenance review.
+7. A maintainer approval documenting the data/provenance review.
+
+Before opening the release pull request, stage the archive and exactly one
+`*.metadata.json` sidecar in a directory and run:
+
+```shell
+conda run --no-capture-output -n dvmdostem-test-data \
+  python scripts/validate_bundle.py /path/to/staged-bundle
+```
+
+The validator supports `tar.gz` and `zip` archives. It verifies the metadata
+contract, data maintainer, archive digest and size, and complete file
+inventory without extracting the archive.
 
 The release notes link the merged release pull request and enumerate every
 asset's digest, size, intended scenario, provenance summary, and license or

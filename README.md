@@ -33,6 +33,34 @@ Read [the release contract](docs/RELEASE_CONTRACT.md) before preparing a
 bundle. Every release asset must have a companion metadata document valid
 against [the bundle metadata schema](schemas/bundle-metadata.schema.json).
 
+### Validating a staged bundle
+
+Create the repository's dedicated environment once:
+
+```shell
+conda env create --file environment.yml
+```
+
+Stage one archive and its `<name>.metadata.json` sidecar in an otherwise empty
+directory, then validate them before opening the release pull request:
+
+```shell
+conda run --no-capture-output -n dvmdostem-test-data \
+  python scripts/validate_bundle.py /path/to/staged-bundle
+```
+
+The command requires exactly one metadata sidecar and validates the metadata
+schema contract, data maintainer, archive SHA-256 digest and size, and the
+complete file inventory. It supports `tar.gz` and `zip` archives. It inspects
+archives without extracting them.
+
+Run the validator's test suite with:
+
+```shell
+conda run --no-capture-output -n dvmdostem-test-data \
+  python -m unittest discover -s tests -v
+```
+
 ## Licensing
 
 The MIT license in this repository applies to repository documentation and

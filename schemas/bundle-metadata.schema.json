@@ -6,6 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schema_version",
+    "owners",
     "bundle",
     "file_inventory",
     "provenance",
@@ -16,6 +17,19 @@
   "properties": {
     "schema_version": {
       "const": "1.0"
+    },
+    "owners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_maintainer"
+      ],
+      "properties": {
+        "data_maintainer": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     },
     "bundle": {
       "type": "object",
