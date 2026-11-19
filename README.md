@@ -54,6 +54,15 @@ schema contract, data maintainer, archive SHA-256 digest and size, and the
 complete file inventory. It supports `tar.gz` and `zip` archives. It inspects
 archives without extracting them.
 
+Redistribution status may be `provisional`, `internal-only`, or `permitted`.
+The first two statuses allow process validation but are not eligible for a
+public release. Add `--require-public` when validating a release candidate:
+
+```shell
+conda run --no-capture-output -n dvmdostem-test-data \
+  python scripts/validate_bundle.py --require-public /path/to/staged-bundle
+```
+
 ### Creating a staged bundle
 
 The repository does not require raw source inputs to be committed as a release

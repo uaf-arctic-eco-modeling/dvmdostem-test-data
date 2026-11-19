@@ -132,8 +132,10 @@ def create_metadata_template(
             ],
         },
         "redistribution": {
-            "status": "<TODO: permitted only after license review>",
-            "license_or_terms": "<TODO: state the license or redistribution terms>",
+            "status": "provisional",
+            "license_or_terms": (
+                "Redistribution review pending; do not publish publicly."
+            ),
         },
         "generation": {
             "procedure": "provenance/generation-command.txt",

@@ -110,3 +110,67 @@ class ValidateBundleTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 1)
         self.assertIn("owners", result.stderr)
+
+    def test_accepts_a_multiline_description_as_string_array(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            metadata_path = create_bundle(directory)
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            metadata["intended_scenarios"][0]["description"] = [
+                "First line.",
+                "Second line.",
+            ]
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+            result = validate(directory)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_accepts_provisional_and_internal_only_bundles(self) -> None:
+        for status in ("provisional", "internal-only"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temporary_directory:
+                directory = Path(temporary_directory)
+                metadata_path = create_bundle(directory)
+                metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+                metadata["redistribution"]["status"] = status
+                metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+                result = validate(directory)
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_rejects_an_unknown_redistribution_status(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            metadata_path = create_bundle(directory)
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            metadata["redistribution"]["status"] = "permitted as DRAFT"
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+            result = validate(directory)
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("redistribution.status", result.stderr)
+
+    def test_require_public_rejects_a_provisional_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            metadata_path = create_bundle(directory)
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            metadata["redistribution"]["status"] = "provisional"
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(VALIDATOR),
+                    "--require-public",
+                    str(directory),
+                ],
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Public release", result.stderr)

@@ -42,8 +42,9 @@ Before publishing, the release pull request must provide:
    version for every bundle.
 4. Data provenance, generation procedure, source revision or source-data
    identifiers, and the intended dvm-dos-tem scenarios.
-5. An explicit license identifier or redistribution status. Restricted,
-   unclear, or absent redistribution permission blocks publication.
+5. An explicit `permitted` redistribution status and license identifier.
+   `provisional` and `internal-only` bundles may be validated for process
+   development but must not be published as public release assets.
 6. Evidence that the archive extracts successfully and that its listed files
    match the metadata.
 7. A maintainer approval documenting the data/provenance review.
@@ -59,6 +60,9 @@ conda run --no-capture-output -n dvmdostem-test-data \
 The validator supports `tar.gz` and `zip` archives. It verifies the metadata
 contract, data maintainer, archive digest and size, and complete file
 inventory without extracting the archive.
+
+Use `--require-public` for a release candidate. This rejects bundles whose
+redistribution status is `provisional` or `internal-only`.
 
 The release notes link the merged release pull request and enumerate every
 asset's digest, size, intended scenario, provenance summary, and license or

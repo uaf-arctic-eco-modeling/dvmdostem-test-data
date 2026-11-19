@@ -14,6 +14,7 @@ from typing import Any, BinaryIO
 
 SHA256_PATTERN = re.compile(r"^[a-f0-9]{64}$")
 RELEASE_VERSION_PATTERN = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
+REDISTRIBUTION_STATUSES = {"provisional", "internal-only", "permitted"}
 REQUIRED_TOP_LEVEL_KEYS = {
     "schema_version",
     "owners",
@@ -42,6 +43,18 @@ def require_nonempty_string(value: Any, name: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValidationError(f"{name} must be a non-empty string.")
     return value
+
+
+def require_nonempty_text(value: Any, name: str) -> Any:
+    if isinstance(value, str) and value:
+        return value
+    if (
+        isinstance(value, list)
+        and value
+        and all(isinstance(line, str) and line for line in value)
+    ):
+        return value
+    raise ValidationError(f"{name} must be a non-empty string or string array.")
 
 
 def require_sha256(value: Any, name: str) -> str:
@@ -124,8 +137,11 @@ def validate_metadata(metadata: Any) -> dict[str, Any]:
         "redistribution",
         {"status", "license_or_terms"},
     )
-    if redistribution["status"] != "permitted":
-        raise ValidationError("redistribution.status must be permitted.")
+    status = redistribution["status"]
+    if status not in REDISTRIBUTION_STATUSES:
+        raise ValidationError(
+            "redistribution.status must be provisional, internal-only, or permitted."
+        )
     require_nonempty_string(
         redistribution["license_or_terms"], "redistribution.license_or_terms"
     )
@@ -150,7 +166,7 @@ def validate_metadata(metadata: Any) -> dict[str, Any]:
             {"id", "description", "expected_behavior"},
         )
         require_nonempty_string(scenario["id"], f"intended_scenarios[{index}].id")
-        require_nonempty_string(
+        require_nonempty_text(
             scenario["description"], f"intended_scenarios[{index}].description"
         )
         require_nonempty_strings(
@@ -211,7 +227,7 @@ def member_digest(
     return digest.hexdigest(), size
 
 
-def validate_bundle(directory: Path) -> None:
+def validate_bundle(directory: Path, require_public: bool = False) -> dict[str, Any]:
     metadata_paths = sorted(directory.glob("*.metadata.json"))
     if len(metadata_paths) != 1:
         raise ValidationError(
@@ -222,6 +238,10 @@ def validate_bundle(directory: Path) -> None:
     except json.JSONDecodeError as error:
         raise ValidationError(f"Metadata is not valid JSON: {error.msg}.") from error
     metadata = validate_metadata(metadata)
+    if require_public and metadata["redistribution"]["status"] != "permitted":
+        raise ValidationError(
+            "Public release requires redistribution.status to be permitted."
+        )
 
     bundle = metadata["bundle"]
     archive = directory / bundle["asset_name"]
@@ -239,6 +259,7 @@ def validate_bundle(directory: Path) -> None:
     }
     if members != inventory:
         raise ValidationError("Archive files do not match file_inventory.")
+    return metadata
 
 
 def main() -> int:
@@ -246,13 +267,26 @@ def main() -> int:
         description="Validate a staged dvm-dos-tem test-data bundle directory."
     )
     parser.add_argument("bundle_directory", type=Path)
+    parser.add_argument(
+        "--require-public",
+        action="store_true",
+        help="Reject provisional or internal-only bundles.",
+    )
     arguments = parser.parse_args()
     try:
-        validate_bundle(arguments.bundle_directory)
+        metadata = validate_bundle(
+            arguments.bundle_directory,
+            require_public=arguments.require_public,
+        )
     except (OSError, tarfile.TarError, zipfile.BadZipFile, ValidationError) as error:
         print(f"Bundle validation failed: {error}", file=sys.stderr)
         return 1
     print("Bundle validation passed.")
+    if metadata["redistribution"]["status"] != "permitted":
+        print(
+            "WARNING: this bundle is not eligible for public release "
+            f"(status: {metadata['redistribution']['status']})."
+        )
     return 0
 
 

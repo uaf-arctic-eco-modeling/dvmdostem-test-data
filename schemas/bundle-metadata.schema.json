@@ -123,6 +123,8 @@
       "properties": {
         "status": {
           "enum": [
+            "provisional",
+            "internal-only",
             "permitted"
           ]
         },
@@ -167,8 +169,20 @@
             "minLength": 1
           },
           "description": {
-            "type": "string",
-            "minLength": 1
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            ]
           },
           "expected_behavior": {
             "type": "array",
