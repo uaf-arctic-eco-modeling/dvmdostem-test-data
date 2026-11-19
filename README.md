@@ -54,6 +54,38 @@ schema contract, data maintainer, archive SHA-256 digest and size, and the
 complete file inventory. It supports `tar.gz` and `zip` archives. It inspects
 archives without extracting them.
 
+### Creating a staged bundle
+
+The repository does not require raw source inputs to be committed as a release
+asset. Create a staging directory outside Git history from a ready-to-run
+source tree:
+
+```shell
+conda run --no-capture-output -n dvmdostem-test-data \
+  python scripts/create_bundle.py data /tmp/dvmdostem-bundle-v0.1.0 \
+  --release-version v0.1.0 \
+  --data-maintainer "Maintainer Name" \
+  --scenario-id stage-run
+```
+
+The command creates a deterministic archive, a metadata template, and an
+editable `/tmp/dvmdostem-bundle-v0.1.0/provenance/` directory containing
+`<TODO: ...>` markers. Complete those records, then rebuild the archive:
+
+```shell
+conda run --no-capture-output -n dvmdostem-test-data \
+  python scripts/create_bundle.py data /tmp/dvmdostem-bundle-v0.1.0 \
+  --release-version v0.1.0 \
+  --data-maintainer "Maintainer Name" \
+  --scenario-id stage-run \
+  --refresh
+```
+
+Finally, rename the metadata template from
+`*.metadata.template.json` to `*.metadata.json`, complete all metadata TODOs,
+and run the validator. The template is intentionally not release-valid until
+the operator supplies provenance, scenario, and redistribution details.
+
 Run the validator's test suite with:
 
 ```shell
